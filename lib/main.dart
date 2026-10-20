@@ -34,6 +34,8 @@ Future<void> main(List<String> args) async {
       options.dsn = dsn;
       options.environment = 'playground';
       options.tracesSampleRate = 1.0;
+      // our own code is in-app, Flutter and pub packages are not
+      options.addInAppInclude('sentry_sample');
     },
     appRunner: () async {
       // CI starts the binary with: <app> --run <id> [--keep-issue]

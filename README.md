@@ -82,10 +82,13 @@ await SentryFlutter.init(
   (options) {
     options.dsn = dsn;
     options.tracesSampleRate = 1.0;
+    options.addInAppInclude('sentry_sample'); // your package name
   },
   appRunner: () => runApp(const SampleApp()),
 );
 ```
+
+`addInAppInclude` marks frames from your own package as in-app. Without it every frame is "not in app" and Sentry collapses them, so the stack trace looks empty.
 
 `appRunner` makes sure Flutter errors (`FlutterError.onError`) and uncaught zone errors go to Sentry.
 
