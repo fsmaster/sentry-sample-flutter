@@ -69,9 +69,13 @@ Without arguments it opens a window with **Send error** button.
 
 ## 4. Check it in Sentry
 
-**Issues** → `RangeError (length): Invalid value: Not in inclusive range 0..2: 7`. Top in-app frame is
-`Inventory.shelf` in `lib/main.dart`. In the binary these names don't exist (obfuscated), they come back
-from the uploaded symbols:
+**Issues** → `ArgumentError: RangeError (length): Invalid value: Not in inclusive range 0..2: 7`.
+In-app frames: `sendError` → `main.<T>` (main.dart:44) → `main` (main.dart:32). In the binary these names
+don't exist (obfuscated), they come back from the uploaded symbols. `Inventory.shelf` is not there, the AOT
+compiler inlined it into `sendError`, normal for release builds.
+
+Below the frames there is **Suspect Commit**: the release was created with commits and the GitHub
+integration is installed, so Sentry points to the commit that last touched these lines.
 
 ![Stack trace](docs/img/stacktrace.png)
 
@@ -88,7 +92,17 @@ await SentryFlutter.init(
 );
 ```
 
-`addInAppInclude` marks frames from your own package as in-app. Without it every frame is "not in app" and Sentry collapses them, so the stack trace looks empty.
+`addInAppInclude` marks frames from your own package as in-app. But careful: in an **obfuscated** build the SDK
+doesn't see package names at all (they come back only after Sentry symbolicates), so this option does nothing
+there and all frames are "not in app", collapsed into one line. For obfuscated builds add a stack trace rule
+in **Settings → Projects → (project) → Stack Trace Rules**:
+
+```
+path:**/sentry-sample-flutter/lib/** +app
+```
+
+(your project folder name instead of `sentry-sample-flutter`). I found this the hard way, first CI events had
+zero in-app frames.
 
 `appRunner` makes sure Flutter errors (`FlutterError.onError`) and uncaught zone errors go to Sentry.
 
